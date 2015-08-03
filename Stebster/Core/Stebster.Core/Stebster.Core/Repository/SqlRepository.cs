@@ -37,12 +37,12 @@
 
         #region Implement ISqlRepository Members
 
-        public void ExecuteProcedure(string procedureName, IDictionary<string, object> inputParameters = null, IDictionary<string, object> outputParameters = null)
+        public void ExecuteProcedure(string procedureName, Dictionary<string, object> inputParameters = null, Dictionary<string, object> outputParameters = null)
         {
             RunStoredProcedure(false, procedureName, inputParameters, outputParameters);
         }
 
-        public IEnumerable<IDictionary<string, object>> ExecuteProcedureGet(string procedureName, IDictionary<string, object> inputParameters = null, IDictionary<string, object> outputParameters = null)
+        public Dictionary<string, object>[] ExecuteProcedureGet(string procedureName, Dictionary<string, object> inputParameters = null, Dictionary<string, object> outputParameters = null)
         {
             return RunStoredProcedure(true, procedureName, inputParameters, outputParameters);
         }
@@ -51,13 +51,12 @@
 
         #region Private Methods
 
-        private List<Dictionary<string, object>> RunStoredProcedure(bool executeReaderToGetResults, 
-                                                                    string procedureName,
-                                                                    // ReSharper disable once ParameterTypeCanBeEnumerable.Local
-                                                                    IDictionary<string, object> inputParameters, 
-                                                                    IDictionary<string, object> outputParameters)
+        private Dictionary<string, object>[] RunStoredProcedure(bool executeReaderToGetResults, 
+                                                                string procedureName,
+                                                                Dictionary<string, object> inputParameters, 
+                                                                IDictionary<string, object> outputParameters)
         {
-            List<Dictionary<string, object>> results = null;
+            var results = new List<Dictionary<string, object>>();
 
             // Get Sql Connection
             using (var sqlConnection = new SqlConnection(ConnectionString))
@@ -96,8 +95,6 @@
                     // If we are getting results from reader
                     if (executeReaderToGetResults)
                     {
-                        results = new List<Dictionary<string, object>>();
-
                         using (var sqlDataReader = sqlCommand.ExecuteReader())
                         {
                             while (sqlDataReader.Read())
@@ -134,7 +131,7 @@
                 }
             }
 
-            return results;
+            return results.ToArray();
         }
 
         #endregion

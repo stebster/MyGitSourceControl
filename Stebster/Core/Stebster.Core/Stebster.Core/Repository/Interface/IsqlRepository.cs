@@ -8,8 +8,8 @@
 
         string DatabaseName { get; }
 
-        void ExecuteProcedure(string procedureName, IDictionary<string, object> inputParameters = null, IDictionary<string, object> outputParameters = null);
+        void ExecuteProcedure(string procedureName, Dictionary<string, object> inputParameters = null, Dictionary<string, object> outputParameters = null);
 
-        IEnumerable<IDictionary<string, object>> ExecuteProcedureGet(string procedureName, IDictionary<string, object> inputParameters = null, IDictionary<string, object> outputParameters = null);
+        Dictionary<string, object>[] ExecuteProcedureGet(string procedureName, Dictionary<string, object> inputParameters = null, Dictionary<string, object> outputParameters = null);
     }
 }
