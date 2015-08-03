@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
+    using System.Linq;
     using Interface;
 
     public class SqlRepository : ISqlRepository
@@ -50,89 +51,92 @@
 
         #region Private Methods
 
-        private List<Dictionary<string, object>> RunStoredProcedure(bool get, string procedureName, IDictionary<string, object> inputParameters, IDictionary<string, object> outputParameters)
+        private List<Dictionary<string, object>> RunStoredProcedure(bool executeReaderToGetResults, 
+                                                                    string procedureName,
+                                                                    // ReSharper disable once ParameterTypeCanBeEnumerable.Local
+                                                                    IDictionary<string, object> inputParameters, 
+                                                                    IDictionary<string, object> outputParameters)
         {
-            var all = new List<Dictionary<string, object>>();
+            List<Dictionary<string, object>> results = null;
 
-            SqlConnection sqlConnection = null;
-            SqlDataReader sqlDataReader  = null;
-
-            try
+            // Get Sql Connection
+            using (var sqlConnection = new SqlConnection(ConnectionString))
             {
-                sqlConnection = new SqlConnection(ConnectionString);
                 sqlConnection.Open();
 
-                var sqlCommand = new SqlCommand(procedureName, sqlConnection)
-                    {
-                        CommandType = CommandType.StoredProcedure
-                    };
-
-                if (inputParameters != null)
+                // Setup the Stored Procedure Command
+                using (var sqlCommand = new SqlCommand(procedureName, sqlConnection))
                 {
-                    foreach (var kvp in inputParameters)
+                    sqlCommand.CommandType = CommandType.StoredProcedure;
+
+                    // Add any input parameters
+                    if (inputParameters != null)
                     {
-                        sqlCommand.Parameters.AddWithValue(kvp.Key, kvp.Value ?? DBNull.Value);
-                    }
-                }
-
-                if (outputParameters != null)
-                {
-                    foreach (var kvp in outputParameters)
-                    {
-                        var outputParameter = new SqlParameter { ParameterName = kvp.Key, Value = kvp.Value ?? DBNull.Value, Direction = ParameterDirection.Output };
-                        sqlCommand.Parameters.Add(outputParameter);
-                    }
-                }
-
-                if (get)
-                {
-                    sqlDataReader = sqlCommand.ExecuteReader();
-
-                    while (sqlDataReader.Read())
-                    {
-                        var row = new Dictionary<string, object>();
-
-                        for (var i = 0; i < sqlDataReader.FieldCount; i++)
+                        foreach (var kvp in inputParameters)
                         {
-                            row.Add(sqlDataReader.GetName(i), sqlDataReader.GetValue(i));
+                            sqlCommand.Parameters.AddWithValue(kvp.Key, kvp.Value ?? DBNull.Value);
                         }
-
-                        all.Add(row);
                     }
-                }
-                else
-                {
-                    sqlCommand.ExecuteNonQuery();
-                }
 
-                if (outputParameters != null)
-                {
-                    // Loop all parameters and any output parameters replace with actual value we got
-                    foreach (SqlParameter parameter in sqlCommand.Parameters)
+                    // Add any output parameters
+                    if (outputParameters != null)
                     {
-                        if (parameter.Direction == ParameterDirection.Output)
+                        foreach (var kvp in outputParameters)
                         {
-                            if (outputParameters.ContainsKey(parameter.ParameterName))
-                                outputParameters[parameter.ParameterName] = parameter.Value;
+                            var outputParameter = new SqlParameter
+                            {
+                                ParameterName = kvp.Key,
+                                Value = kvp.Value ?? DBNull.Value,
+                                Direction = ParameterDirection.Output
+                            };
+                            sqlCommand.Parameters.Add(outputParameter);
+                        }
+                    }
+
+                    // If we are getting results from reader
+                    if (executeReaderToGetResults)
+                    {
+                        results = new List<Dictionary<string, object>>();
+
+                        using (var sqlDataReader = sqlCommand.ExecuteReader())
+                        {
+                            while (sqlDataReader.Read())
+                            {
+                                var row = new Dictionary<string, object>();
+
+                                for (var i = 0; i < sqlDataReader.FieldCount; i++)
+                                {
+                                    row.Add(sqlDataReader.GetName(i), sqlDataReader.GetValue(i));
+                                }
+
+                                results.Add(row);
+                            }
+                        }
+                    }
+                    else // Otherwise we just execute the query
+                    {
+                        sqlCommand.ExecuteNonQuery();
+                    }
+
+                    // If we passed some output parameters
+                    if (outputParameters != null)
+                    {
+                        // Loop sql output parameters replace our passed parameters with actual value we got
+                        foreach (var parameter in sqlCommand.Parameters
+                                                            .Cast<SqlParameter>()
+                                                            .Where(x => x.Direction == ParameterDirection.Output && 
+                                                                    outputParameters.ContainsKey(x.ParameterName)))
+                        {
+             
+                            outputParameters[parameter.ParameterName] = parameter.Value;
                         }
                     }
                 }
             }
-            finally
-            {
-                if (sqlConnection != null)
-                    sqlConnection.Close();
 
-                if (sqlDataReader != null)
-                    sqlDataReader.Close();
-            }
-
-            return all;
+            return results;
         }
 
         #endregion
-
-
-     
     }
 }
