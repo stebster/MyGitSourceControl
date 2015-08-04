@@ -1,15 +1,16 @@
 ﻿namespace Stebster.Core.Repository.Interface
 {
+    using System;
     using System.Collections.Generic;
 
     public interface IXmlRepository
     {
-        string SavePath { get; }
+        bool SaveItem<T>(T item) where T : class, IEquatable<T>;
 
-        void PutItems<T>(IEnumerable<T> items, string toItemsNodeName); 
+        IList<T> ReadItems<T>() where T : class, IEquatable<T>; 
 
-        IList<T> GetItems<T>(string fromItemNodeName);
+        bool DeleteItem<T>(T item) where T : class, IEquatable<T>;
 
-        void RemoveItems<T>(IEnumerable<T> items, string fromItemNodeName);
+        T GetItem<T>(T item) where T : class, IEquatable<T>;
     }
 }

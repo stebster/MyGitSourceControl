@@ -15,7 +15,7 @@
         /// <param name="prefix">Optional namespace prefix</param>
         /// <param name="ns">Optional namespace</param>
         /// <returns>The XElement that the object serialises to</returns>
-        public static XElement ToXElement<T>(this object obj, string prefix="", string ns="")
+        public static XElement ToXElement<T>(this object obj, string prefix="", string ns="") where T : class
         {
             XElement element;
 
