@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Stebster.Core.UnitTest</RootNamespace>
-    <AssemblyName>Stebster.Core.UUnitTest</AssemblyName>
+    <AssemblyName>Stebster.Core.UnitTest</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
