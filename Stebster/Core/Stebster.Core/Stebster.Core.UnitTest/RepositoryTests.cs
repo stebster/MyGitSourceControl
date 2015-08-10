@@ -40,7 +40,7 @@
         [Test]
         public void TestXmlRepository()
         {
-            var repository = new XmlRepository(@"c:\VideoLibrary\TestRepository");
+            var repository = new XmlRepository(@"..\..\TestXmlRepository\Repository.xml");
 
             var save = repository.SaveItem(_serialisableClass);
 
